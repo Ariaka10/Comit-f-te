@@ -59,7 +59,7 @@ main{padding-block:22px 48px;display:flex;flex-direction:column;gap:22px}
 .p-valide,.p-ok{background:var(--ok-soft);color:var(--ok)}
 .p-termine{background:var(--line);color:var(--muted)}
 .p-attente{background:var(--warn-soft);color:var(--warn)}
-.p-refuse,.p-retard{background:var(--bad-soft);color:var(--bad)}
+.p-refuse,.p-retard,.p-veto{background:var(--bad-soft);color:var(--bad)}
 .p-role{background:var(--lampion-soft);color:var(--ink)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
@@ -91,6 +91,7 @@ tr:last-child td{border-bottom:0}
 .back{align-self:flex-start}
 .empty{padding:18px;color:var(--muted);text-align:center}
 .lock{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:16px;color:var(--muted)}
+.vetobox{background:var(--bad-soft);border-left:4px solid var(--bad);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .slots{display:flex;flex-wrap:wrap;gap:6px}
 .chip{background:var(--info-soft);color:var(--ink);border-radius:999px;padding:2px 10px;font-size:.8rem}
 .chip.free{background:none;border:1px dashed var(--line);color:var(--muted)}
@@ -116,9 +117,9 @@ tr:last-child td{border-bottom:0}
 <script>
 (function(){
 "use strict";
-const KEY="cdf-demo-v1";
-const ROLES={visiteur:"Visiteur",membre:"Membre du comité",officiel:"Élu·e du conseil",admin:"Administrateur"};
-const EV_STATUS={projet:"En projet",valide:"Validé",termine:"Terminé"};
+const KEY="cdf-demo-v2";
+const ROLES={visiteur:"Visiteur",membre:"Membre du comité",officiel:"Élu·e du conseil",maire:"Maire",admin:"Administrateur"};
+const EV_STATUS={projet:"En projet",valide:"Validé",termine:"Terminé",veto:"Refusé par la mairie"};
 const RQ_STATUS={attente:"En attente",validee:"Validée",refusee:"Refusée"};
 const CHECK_TEMPLATE=[
   ["Réservation de la salle / du matériel auprès de la mairie",45],
@@ -137,7 +138,7 @@ function seed(){
     {id:"u3",name:"Sophie Bernard",role:"membre",title:"Trésorière",treasurer:true,email:"sophie.bernard@exemple.fr"},
     {id:"u4",name:"Karim Benali",role:"membre",title:"Responsable logistique",email:"karim.benali@exemple.fr"},
     {id:"u5",name:"Lucie Moreau",role:"visiteur",title:"Conseillère municipale (consultation)",email:"lucie.moreau@exemple.fr"},
-    {id:"u6",name:"Hélène Garnier",role:"officiel",title:"Maire",email:"h.garnier@exemple.fr"}
+    {id:"u6",name:"Hélène Garnier",role:"maire",title:"Maire",email:"h.garnier@exemple.fr"}
   ];
   const events=[
     {id:"e1",title:"Repas d'automne",date:"2026-10-17",place:"Salle des fêtes",owner:"u4",status:"termine",desc:"Repas dansant, 140 couverts."},
@@ -189,11 +190,22 @@ function seed(){
     {id:"d4",title:"Attestation d'assurance RC 2026",cat:"Assurance",date:"2026-06-20",by:"u3"},
     {id:"d5",title:"Bilan financier – Repas d'automne",cat:"Finances",date:"2026-10-25",by:"u3"}
   ];
-  return {users,events,checks,slots,budget,requests,docs,seq:100};
+  const log=[
+    {at:"2026-11-08T18:42",by:"u1",text:"a demandé : Salle des fêtes le dimanche 17 janvier, 12 h – 19 h"},
+    {at:"2026-11-07T09:15",by:"u3",text:"a modifié le budget : Emplacements exposants (25 × 15 €), réel 240 €"},
+    {at:"2026-11-06T20:03",by:"u3",text:"a demandé : Buvette temporaire (boissons du groupe 3) – Marché de Noël"},
+    {at:"2026-11-05T21:30",by:"u1",text:"a ajouté le document « Compte rendu – réunion du 4 novembre »"},
+    {at:"2026-11-04T22:10",by:"u1",text:"a coché « Affiches et annonce sur le panneau municipal » (Marché de Noël)"},
+    {at:"2026-11-02T14:20",by:"u1",text:"a demandé : Subvention exceptionnelle de 400 € pour la scène de la Fête de la musique"},
+    {at:"2026-10-29T11:05",by:"u2",text:"a validé la demande : 10 barnums + 20 tables pour le Marché de Noël"},
+    {at:"2026-10-20T17:48",by:"u2",text:"a passé « Marché de Noël » au statut Validé"}
+  ];
+  return {users,events,checks,slots,budget,requests,docs,log,seq:100};
 }
 
 let memory=null;
 function load(){try{const s=localStorage.getItem(KEY);return s?JSON.parse(s):null}catch(e){return null}}
+function log(t){db.log=db.log||[];const d=new Date();const z=n=>String(n).padStart(2,"0");db.log.unshift({at:d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())+"T"+z(d.getHours())+":"+z(d.getMinutes()),by:S.user,text:t});if(db.log.length>500)db.log.length=500}
 function save(){memory=db;try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}}
 let db=load()||seed();
 const S={user:null,view:"accueil",eventId:null};
@@ -208,7 +220,9 @@ function can(a){
     case "editEvents": return r==="membre"||r==="admin";
     case "viewBudget": return r!=="visiteur";
     case "editBudget": return r==="admin"||!!u.treasurer;
-    case "validate": return r==="officiel"||r==="admin";
+    case "validate": return r==="officiel"||r==="maire"||r==="admin";
+    case "veto": return r==="maire";
+    case "history": return r==="maire"||r==="admin";
     case "request": return r==="membre"||r==="admin";
     case "signup": return r==="membre"||r==="admin";
     case "addDoc": return r!=="visiteur";
@@ -242,6 +256,7 @@ const VIEWS=[
   ["budget","Budget",()=>can("viewBudget")],
   ["demandes","Demandes mairie",()=>can("internal")],
   ["documents","Documents",()=>can("internal")],
+  ["historique","Historique",()=>can("history")],
   ["comptes","Comptes",()=>can("users")]
 ];
 
@@ -260,7 +275,7 @@ function render(){
   </div>
   <div class="wrap"><nav class="tabs" aria-label="Sections">${VIEWS.filter(v=>v[2]()).map(v=>`<button data-a="go" data-v="${v[0]}" ${S.view===v[0]||(S.view==="evenement"&&v[0]==="evenements")?'aria-current="page"':""}>${v[1]}</button>`).join("")}</nav></div>
   </header>
-  <main class="wrap">${({accueil:homeView,evenements:eventsView,evenement:eventView,benevoles:volunteersView,budget:budgetView,demandes:requestsView,documents:docsView,comptes:usersView})[S.view]()}</main>`;
+  <main class="wrap">${({accueil:homeView,evenements:eventsView,evenement:eventView,benevoles:volunteersView,budget:budgetView,demandes:requestsView,documents:docsView,historique:historyView,comptes:usersView})[S.view]()}</main>`;
 }
 function demoBand(){return `<div class="demo-band"><div class="wrap"><span><b>Version de démonstration.</b> Données fictives, enregistrées seulement sur cet appareil.</span><button class="linkbtn" data-a="reset">Remettre les données d'exemple</button></div></div>`}
 function logo(){return `<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><path d="M2 8 Q17 16 32 8" fill="none" stroke="var(--muted)" stroke-width="1.5"/><path d="M7 10.6 l3 8 3-6.3z" fill="var(--accent)"/><path d="M15 12.4 l2 8.6 2.6-8.6z" fill="var(--lampion)"/><path d="M21.5 12 l3 7 2-8.7z" fill="var(--bad)"/></svg>`}
@@ -277,6 +292,7 @@ function loginView(){
     <li><b>Visiteur</b> : consulte l'agenda des événements.</li>
     <li><b>Membre du comité</b> : organise les événements, les checklists, les bénévoles ; demande salles, matériel et subventions. Le ou la trésorière tient le budget.</li>
     <li><b>Élu·e du conseil</b> : voit tout, valide ou refuse les demandes faites à la mairie.</li>
+    <li><b>Maire</b> : comme un élu, avec en plus l'historique complet des actions et un droit de veto sur les événements.</li>
     <li><b>Administrateur</b> : tous les droits, gère les comptes et les rôles.</li>
    </ul></details>
   </div></div>`;
@@ -340,7 +356,9 @@ function eventView(){
   let h=`<button class="btn sm back" data-a="go" data-v="evenements">← Événements</button>
   <div class="date">${cal(e.date)}<div><h1>${esc(e.title)}</h1><div class="muted">${fdate(e.date)} · ${esc(e.place)}</div></div></div>
   <div class="row"><span class="pill p-${e.status}">${EV_STATUS[e.status]}</span>${can("internal")?`<span class="small muted">Responsable : ${esc(uname(e.owner))}</span>`:""}
-  ${can("editEvents")?`<select id="ev-status" data-a="status" data-id="${e.id}" aria-label="Statut" class="btn sm">${Object.entries(EV_STATUS).map(([k,v])=>`<option value="${k}" ${k===e.status?"selected":""}>${v}</option>`).join("")}</select>`:""}</div>
+  ${can("editEvents")&&e.status!=="veto"?`<select id="ev-status" data-a="status" data-id="${e.id}" aria-label="Statut" class="btn sm">${Object.entries(EV_STATUS).filter(([k])=>k!=="veto").map(([k,v])=>`<option value="${k}" ${k===e.status?"selected":""}>${v}</option>`).join("")}</select>`:""}
+  ${can("veto")&&e.status!=="veto"&&e.status!=="termine"?`<button class="btn sm bad" data-a="veto" data-id="${e.id}">Opposer un veto</button>`:""}</div>
+  ${e.status==="veto"?`<div class="vetobox"><div><b>Veto de la mairie</b> · ${esc(uname(e.vetoBy))}, le ${sdate(e.vetoDate)}</div><div>« ${esc(e.vetoNote)} »</div>${can("veto")?`<button class="btn sm" data-a="unveto" data-id="${e.id}">Lever le veto</button>`:`<div class="small muted">L'événement est suspendu tant que le veto n'est pas levé par la maire.</div>`}</div>`:""}
   <p>${esc(e.desc)}</p>`;
   if(!can("internal")) return h+`<div class="lock">L'organisation détaillée est réservée au comité et aux élus.</div>`;
   const cs=db.checks.filter(c=>c.event===e.id);
@@ -441,12 +459,12 @@ const actions={
   open:el=>{S.view="evenement";S.eventId=el.dataset.id;render();window.scrollTo(0,0)},
   close:closeModal,
   closeBg:(el,ev)=>{if(ev.target===el)closeModal()},
-  sign:el=>{const s=db.slots.find(x=>x.id===el.dataset.id);if(s.people.length<s.need&&!s.people.includes(S.user)){s.people.push(S.user);save();render();toast("Inscription enregistrée")}},
-  unsign:el=>{const s=db.slots.find(x=>x.id===el.dataset.id);s.people=s.people.filter(p=>p!==S.user);save();render();toast("Vous êtes retiré·e du créneau")},
+  sign:el=>{const s=db.slots.find(x=>x.id===el.dataset.id);if(s.people.length<s.need&&!s.people.includes(S.user)){s.people.push(S.user);log("s'est inscrit·e : "+s.label+" ("+evt(s.event).title+")");save();render();toast("Inscription enregistrée")}},
+  unsign:el=>{const s=db.slots.find(x=>x.id===el.dataset.id);s.people=s.people.filter(p=>p!==S.user);log("s'est retiré·e : "+s.label+" ("+evt(s.event).title+")");save();render();toast("Vous êtes retiré·e du créneau")},
   decide:el=>{
     const r=db.requests.find(x=>x.id===el.dataset.id), ok=el.dataset.ok==="1";
     modal(ok?"Valider la demande":"Refuser la demande",`<p class="small">${esc(r.subject)}</p>`+fld("m-note",ok?"Précisions pour le comité (facultatif)":"Motif du refus",`<textarea id="m-note" rows="3" ${ok?"":"required"}></textarea>`),ok?"Valider":"Refuser",f=>{
-      r.status=ok?"validee":"refusee";r.by2=S.user;r.note=f["m-note"].value.trim();save();closeModal();render();toast(ok?"Demande validée":"Demande refusée");
+      r.status=ok?"validee":"refusee";r.by2=S.user;r.note=f["m-note"].value.trim();log((ok?"a validé":"a refusé")+" la demande : "+r.subject);save();closeModal();render();toast(ok?"Demande validée":"Demande refusée");
     });
   },
   newEvent:()=>modal("Nouvel événement",
@@ -456,10 +474,10 @@ const actions={
     "Créer",f=>{
       const e={id:nid("e"),title:f["m-title"].value.trim(),date:f["m-date"].value,place:f["m-place"].value.trim(),owner:f["m-owner"].value,status:"projet",desc:f["m-desc"].value.trim()};
       db.events.push(e);CHECK_TEMPLATE.forEach(t=>db.checks.push({id:nid("c"),event:e.id,label:t[0],offset:t[1],done:false}));
-      save();closeModal();S.view="evenement";S.eventId=e.id;render();toast("Événement créé");
+      log("a créé l'événement « "+e.title+" »");save();closeModal();S.view="evenement";S.eventId=e.id;render();toast("Événement créé");
     }),
   newSlot:el=>modal("Nouveau créneau bénévole",fld("m-label","Intitulé (tâche et horaire)","<input id='m-label' required placeholder='Buvette · 18 h – 21 h'>")+fld("m-need","Nombre de personnes","<input id='m-need' type='number' min='1' value='2' required>"),"Ajouter",f=>{
-      db.slots.push({id:nid("s"),event:el.dataset.id,label:f["m-label"].value.trim(),need:Math.max(1,+f["m-need"].value),people:[]});save();closeModal();render();toast("Créneau ajouté");
+      db.slots.push({id:nid("s"),event:el.dataset.id,label:f["m-label"].value.trim(),need:Math.max(1,+f["m-need"].value),people:[]});log("a ajouté un créneau bénévole ("+evt(el.dataset.id).title+")");save();closeModal();render();toast("Créneau ajouté");
     }),
   newLine:()=>lineModal(null),
   editLine:el=>lineModal(db.budget.find(b=>b.id===el.dataset.id)),
@@ -467,20 +485,36 @@ const actions={
     fld("m-type","Type",`<select id="m-type">${["Salle","Matériel","Subvention","Autorisation","Autre"].map(t=>`<option>${t}</option>`).join("")}</select>`)+
     fld("m-ev","Événement concerné",`<select id="m-ev">${evOptions(S.eventId,true)}</select>`)+fld("m-subj","Objet de la demande","<textarea id='m-subj' rows='3' required></textarea>"),
     "Envoyer aux élus",f=>{
-      db.requests.push({id:nid("r"),type:f["m-type"].value,subject:f["m-subj"].value.trim(),event:f["m-ev"].value,by:S.user,date:new Date().toISOString().slice(0,10),status:"attente",by2:"",note:""});save();closeModal();render();toast("Demande envoyée aux élus");
+      db.requests.push({id:nid("r"),type:f["m-type"].value,subject:f["m-subj"].value.trim(),event:f["m-ev"].value,by:S.user,date:new Date().toISOString().slice(0,10),status:"attente",by2:"",note:""});log("a demandé : "+f["m-subj"].value.trim());save();closeModal();render();toast("Demande envoyée aux élus");
     }),
   newDoc:()=>modal("Ajouter un document",fld("m-dt","Titre","<input id='m-dt' required>")+fld("m-cat","Catégorie",`<select id="m-cat">${["Compte rendu","Juridique","Finances","Assurance","Communication"].map(c=>`<option>${c}</option>`).join("")}</select>`)+`<p class="small muted">Dans la vraie version, on joint ici le fichier (PDF, Word, photo).</p>`,"Ajouter",f=>{
-      db.docs.push({id:nid("d"),title:f["m-dt"].value.trim(),cat:f["m-cat"].value,date:new Date().toISOString().slice(0,10),by:S.user});save();closeModal();render();toast("Document ajouté");
+      db.docs.push({id:nid("d"),title:f["m-dt"].value.trim(),cat:f["m-cat"].value,date:new Date().toISOString().slice(0,10),by:S.user});log("a ajouté le document « "+f["m-dt"].value.trim()+" »");save();closeModal();render();toast("Document ajouté");
     }),
   fakeOpen:()=>toast("Démo : les fichiers ne sont pas joints"),
   newUser:()=>modal("Inviter une personne",fld("m-un","Nom et prénom","<input id='m-un' required>")+fld("m-ut","Fonction","<input id='m-ut' placeholder='Bénévole, conseiller municipal…'>")+fld("m-ue","E-mail","<input id='m-ue' type='email' required>")+fld("m-ur","Rôle",`<select id="m-ur">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${k==="membre"?"selected":""}>${v}</option>`).join("")}</select>`)+`<p class="small muted">Dans la vraie version, la personne reçoit un e-mail pour créer son mot de passe.</p>`,"Inviter",f=>{
-      db.users.push({id:nid("u"),name:f["m-un"].value.trim(),title:f["m-ut"].value.trim(),email:f["m-ue"].value.trim(),role:f["m-ur"].value});save();closeModal();render();toast("Invitation créée");
+      db.users.push({id:nid("u"),name:f["m-un"].value.trim(),title:f["m-ut"].value.trim(),email:f["m-ue"].value.trim(),role:f["m-ur"].value});log("a invité "+f["m-un"].value.trim()+" ("+ROLES[f["m-ur"].value]+")");save();closeModal();render();toast("Invitation créée");
     }),
   delUser:el=>{
     if(el.dataset.confirm!=="1"){el.dataset.confirm="1";el.textContent="Confirmer ?";return}
-    db.users=db.users.filter(u=>u.id!==el.dataset.id);save();render();toast("Compte retiré");
+    log("a retiré le compte de "+uname(el.dataset.id));db.users=db.users.filter(u=>u.id!==el.dataset.id);save();render();toast("Compte retiré");
   }
 };
+actions.veto=el=>{
+  const e=evt(el.dataset.id);
+  modal("Opposer un veto",`<p class="small">L'événement « ${esc(e.title)} » sera marqué <b>Refusé par la mairie</b>. Le comité ne pourra plus changer son statut tant que le veto n'est pas levé.</p>`+fld("m-veto","Motif (visible par le comité)","<textarea id='m-veto' rows='3' required></textarea>"),"Opposer le veto",f=>{
+    e.prevStatus=e.status;e.status="veto";e.vetoBy=S.user;e.vetoDate=new Date().toISOString().slice(0,10);e.vetoNote=f["m-veto"].value.trim();
+    log("a opposé un veto à « "+e.title+" » : "+e.vetoNote);save();closeModal();render();toast("Veto enregistré");
+  });
+};
+actions.unveto=el=>{
+  const e=evt(el.dataset.id);e.status=e.prevStatus||"projet";log("a levé le veto sur « "+e.title+" »");save();render();toast("Veto levé");
+};
+function historyView(){
+  const L=db.log||[];
+  const fmt=a=>{const [d,t]=a.split("T");return sdate(d)+" · "+t.replace(":"," h ")};
+  return `<div><h1>Historique</h1><p class="muted">Toutes les actions faites dans l'outil, des plus récentes aux plus anciennes. Réservé à la maire et à l'administrateur.</p></div>
+  <div class="list">${L.length?L.map(x=>`<div class="li"><span class="avatar">${initials(uname(x.by))}</span><div class="grow"><b>${esc(uname(x.by))}</b> ${esc(x.text)}<div class="small muted">${fmt(x.at)}</div></div></div>`).join(""):`<div class="empty">Aucune action pour l'instant.</div>`}</div>`;
+}
 function lineModal(b){
   modal(b?"Modifier la ligne":"Nouvelle ligne de budget",
     fld("m-bl","Libellé",`<input id="m-bl" required value="${esc(b?b.label:"")}">`)+
@@ -491,12 +525,12 @@ function lineModal(b){
     (b?`<button type="button" class="btn bad" data-a="delLine" data-id="${b.id}">Supprimer cette ligne</button>`:""),
     "Enregistrer",f=>{
       const v={label:f["m-bl"].value.trim(),kind:f["m-bk"].value,event:f["m-be"].value,planned:+f["m-bp"].value||0,actual:+f["m-ba"].value||0};
-      if(b)Object.assign(b,v);else db.budget.push({id:nid("b"),...v});save();closeModal();render();toast("Budget enregistré");
+      if(b)Object.assign(b,v);else db.budget.push({id:nid("b"),...v});log((b?"a modifié":"a ajouté")+" au budget : "+v.label+", prévu "+eur(v.planned)+", réel "+eur(v.actual));save();closeModal();render();toast("Budget enregistré");
     });
 }
 actions.delLine=el=>{
   if(el.dataset.confirm!=="1"){el.dataset.confirm="1";el.textContent="Cliquer encore pour supprimer";return}
-  db.budget=db.budget.filter(x=>x.id!==el.dataset.id);save();closeModal();render();toast("Ligne supprimée");
+  log("a supprimé du budget : "+db.budget.find(x=>x.id===el.dataset.id).label);db.budget=db.budget.filter(x=>x.id!==el.dataset.id);save();closeModal();render();toast("Ligne supprimée");
 };
 
 document.addEventListener("click",ev=>{
@@ -506,9 +540,9 @@ document.addEventListener("click",ev=>{
 });
 document.addEventListener("change",ev=>{
   const el=ev.target, a=el.dataset&&el.dataset.a; if(!a) return;
-  if(a==="toggle"){const c=db.checks.find(x=>x.id===el.dataset.id);c.done=el.checked;save();render();toast(c.done?"Tâche cochée":"Tâche décochée")}
-  if(a==="status"){evt(el.dataset.id).status=el.value;save();render();toast("Statut mis à jour")}
-  if(a==="role"){db.users.find(u=>u.id===el.dataset.id).role=el.value;save();render();toast("Rôle modifié")}
+  if(a==="toggle"){const c=db.checks.find(x=>x.id===el.dataset.id);c.done=el.checked;log((c.done?"a coché":"a décoché")+" « "+c.label+" » ("+evt(c.event).title+")");save();render();toast(c.done?"Tâche cochée":"Tâche décochée")}
+  if(a==="status"){const e=evt(el.dataset.id);e.status=el.value;log("a passé « "+e.title+" » au statut "+EV_STATUS[e.status]);save();render();toast("Statut mis à jour")}
+  if(a==="role"){const u=db.users.find(x=>x.id===el.dataset.id);u.role=el.value;log("a donné le rôle "+ROLES[u.role]+" à "+u.name);save();render();toast("Rôle modifié")}
   if(a==="treas"){db.users.find(u=>u.id===el.dataset.id).treasurer=el.checked;save();render()}
 });
 document.addEventListener("submit",ev=>{ev.preventDefault();if(onSubmit)onSubmit(ev.target.elements)});
