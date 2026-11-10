@@ -1,0 +1,518 @@
+<title>Comité des fêtes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout : en-tête fixe + barre d'onglets défilante + contenu en colonne, cartes seulement pour les objets (événements, demandes). */
+:root{
+  --bg:#f5f6f8; --surface:#ffffff; --ink:#18213a; --muted:#5d6680; --line:#dfe2ea;
+  --accent:#1f4fa8; --accent-ink:#ffffff; --lampion:#e8a317; --lampion-soft:#fdf2d9;
+  --ok:#1d7a4a; --ok-soft:#e1f3e9; --warn:#a35b00; --warn-soft:#fdecd6; --bad:#b3261e; --bad-soft:#fbe3e1;
+  --info-soft:#e4ebf8;
+  --display:"Bricolage Grotesque","Segoe UI Semibold","Segoe UI",system-ui,sans-serif;
+  --body:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141f; --surface:#181e2d; --ink:#e7eaf2; --muted:#9aa3ba; --line:#2a3246;
+  --accent:#7aa2f0; --accent-ink:#0d1424; --lampion:#f2b740; --lampion-soft:#3a2f14;
+  --ok:#5cc98d; --ok-soft:#173326; --warn:#f0a85a; --warn-soft:#3a2a14; --bad:#f08a82; --bad-soft:#3a1a18;
+  --info-soft:#1f2a44; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141f; --surface:#181e2d; --ink:#e7eaf2; --muted:#9aa3ba; --line:#2a3246;
+  --accent:#7aa2f0; --accent-ink:#0d1424; --lampion:#f2b740; --lampion-soft:#3a2f14;
+  --ok:#5cc98d; --ok-soft:#173326; --warn:#f0a85a; --warn-soft:#3a2a14; --bad:#f08a82; --bad-soft:#3a1a18;
+  --info-soft:#1f2a44; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+h1,h2,h3{font-family:var(--display);line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:1.6rem} h2{font-size:1.2rem} h3{font-size:1rem}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.demo-band{background:var(--lampion-soft);color:var(--ink);font-size:.82rem;border-bottom:1px solid var(--line)}
+.demo-band .wrap{padding-block:6px;display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;align-items:center}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font-size:inherit}
+header.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.top .wrap{display:flex;align-items:center;gap:12px;padding-block:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0}
+.brand svg{flex:none}
+.brand b{font-family:var(--display);font-size:1.05rem;display:block}
+.brand small{color:var(--muted);font-size:.78rem;display:block}
+.who{display:flex;align-items:center;gap:8px;font-size:.85rem}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;padding-block:0 8px;scrollbar-width:thin}
+nav.tabs button{background:none;border:0;padding:7px 12px;border-radius:8px;color:var(--muted);white-space:nowrap;font-weight:500}
+nav.tabs button[aria-current="page"]{background:var(--info-soft);color:var(--accent)}
+main{padding-block:22px 48px;display:flex;flex-direction:column;gap:22px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spread{justify-content:space-between}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.btn{border:1px solid var(--line);background:var(--surface);padding:7px 14px;border-radius:8px;font-weight:500}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.btn.bad{color:var(--bad);border-color:var(--bad)}
+.btn.sm{padding:4px 10px;font-size:.85rem}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;font-weight:600;white-space:nowrap}
+.p-projet{background:var(--info-soft);color:var(--accent)}
+.p-valide,.p-ok{background:var(--ok-soft);color:var(--ok)}
+.p-termine{background:var(--line);color:var(--muted)}
+.p-attente{background:var(--warn-soft);color:var(--warn)}
+.p-refuse,.p-retard{background:var(--bad-soft);color:var(--bad)}
+.p-role{background:var(--lampion-soft);color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+button.card{text-align:left}
+button.card:hover{border-color:var(--accent)}
+.date{display:flex;gap:12px;align-items:center}
+.cal{flex:none;width:50px;text-align:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.cal span{display:block;background:var(--lampion);color:#2a1d00;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 0}
+.cal b{display:block;font-family:var(--display);font-size:1.25rem;padding:2px 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+.stat .k{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.stat .v{font-family:var(--display);font-size:1.5rem;font-variant-numeric:tabular-nums}
+section.block{display:flex;flex-direction:column;gap:12px}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.li{display:flex;gap:12px;align-items:center;padding:11px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.li:first-child{border-top:0}
+.li .grow{flex:1;min-width:180px}
+.check{display:flex;gap:10px;align-items:flex-start;flex:1;min-width:200px}
+.check input{width:18px;height:18px;margin-top:2px;accent-color:var(--ok)}
+.done-txt{text-decoration:line-through;color:var(--muted)}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.9rem}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+td.num,th.num{text-align:right}
+tr:last-child td{border-bottom:0}
+.pos{color:var(--ok)} .neg{color:var(--bad)}
+.back{align-self:flex-start}
+.empty{padding:18px;color:var(--muted);text-align:center}
+.lock{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:16px;color:var(--muted)}
+.slots{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--info-soft);color:var(--ink);border-radius:999px;padding:2px 10px;font-size:.8rem}
+.chip.free{background:none;border:1px dashed var(--line);color:var(--muted)}
+/* Connexion */
+.login{min-height:100%;display:flex;flex-direction:column;align-items:center;padding-block:40px;gap:22px}
+.login .box{width:100%;max-width:560px;display:flex;flex-direction:column;gap:16px}
+.acct{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:12px 14px}
+.avatar{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:600;background:var(--info-soft);color:var(--accent);font-size:.9rem}
+/* Fenêtre modale */
+.overlay{position:fixed;inset:0;background:rgba(10,14,25,.5);display:flex;align-items:flex-start;justify-content:center;padding:max(40px,env(safe-area-inset-top,0px)) 16px 16px;z-index:20;overflow-y:auto}
+.modal{background:var(--surface);border-radius:14px;width:100%;max-width:480px;padding:20px;display:flex;flex-direction:column;gap:14px;border:1px solid var(--line)}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:.82rem;font-weight:600;color:var(--muted)}
+.field input,.field select,.field textarea{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;width:100%}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:10px;font-size:.9rem;z-index:30}
+@media (prefers-reduced-motion:no-preference){.card,.btn{transition:border-color .15s,background .15s}}
+</style>
+
+<div id="app"></div>
+<div id="modal-root"></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const KEY="cdf-demo-v1";
+const ROLES={visiteur:"Visiteur",membre:"Membre du comité",officiel:"Élu·e du conseil",admin:"Administrateur"};
+const EV_STATUS={projet:"En projet",valide:"Validé",termine:"Terminé"};
+const RQ_STATUS={attente:"En attente",validee:"Validée",refusee:"Refusée"};
+const CHECK_TEMPLATE=[
+  ["Réservation de la salle / du matériel auprès de la mairie",45],
+  ["Assurance responsabilité civile confirmée",30],
+  ["Déclaration SACEM (musique)",30],
+  ["Demande d'autorisation de buvette temporaire",21],
+  ["Affiches et annonce sur le panneau municipal",21],
+  ["Planning des bénévoles complet",10],
+  ["Caisse de départ préparée (comptée à deux)",2]
+];
+
+function seed(){
+  const users=[
+    {id:"u1",name:"Camille Roux",role:"admin",title:"Présidente du comité",email:"camille.roux@exemple.fr"},
+    {id:"u2",name:"Jean-Pierre Martin",role:"officiel",title:"Adjoint aux fêtes et cérémonies",email:"jp.martin@exemple.fr"},
+    {id:"u3",name:"Sophie Bernard",role:"membre",title:"Trésorière",treasurer:true,email:"sophie.bernard@exemple.fr"},
+    {id:"u4",name:"Karim Benali",role:"membre",title:"Responsable logistique",email:"karim.benali@exemple.fr"},
+    {id:"u5",name:"Lucie Moreau",role:"visiteur",title:"Conseillère municipale (consultation)",email:"lucie.moreau@exemple.fr"},
+    {id:"u6",name:"Hélène Garnier",role:"officiel",title:"Maire",email:"h.garnier@exemple.fr"}
+  ];
+  const events=[
+    {id:"e1",title:"Repas d'automne",date:"2026-10-17",place:"Salle des fêtes",owner:"u4",status:"termine",desc:"Repas dansant, 140 couverts."},
+    {id:"e2",title:"Marché de Noël",date:"2026-12-13",place:"Place de la mairie",owner:"u3",status:"valide",desc:"25 exposants, vin chaud, venue du Père Noël à 16 h."},
+    {id:"e3",title:"Galette des aînés",date:"2027-01-17",place:"Salle des fêtes",owner:"u1",status:"projet",desc:"Après-midi offert aux plus de 70 ans, animation accordéon."},
+    {id:"e4",title:"Carnaval des écoles",date:"2027-03-13",place:"Départ cour de l'école",owner:"u4",status:"projet",desc:"Défilé, crêpes, jugement de Monsieur Carnaval."},
+    {id:"e5",title:"Fête de la musique",date:"2027-06-21",place:"Parc municipal",owner:"u1",status:"projet",desc:"Scène ouverte aux groupes locaux, buvette, restauration."}
+  ];
+  const checks=[];
+  events.forEach(e=>CHECK_TEMPLATE.forEach((t,i)=>{
+    let done=e.status==="termine";
+    if(e.id==="e2") done=i<2||i===4;
+    checks.push({id:"c"+e.id+i,event:e.id,label:t[0],offset:t[1],done});
+  }));
+  const slots=[
+    {id:"s1",event:"e2",label:"Montage des chalets · 8 h – 10 h",need:6,people:["u4","u1"]},
+    {id:"s2",event:"e2",label:"Buvette vin chaud · 14 h – 17 h",need:3,people:["u3"]},
+    {id:"s3",event:"e2",label:"Buvette vin chaud · 17 h – 20 h",need:3,people:[]},
+    {id:"s4",event:"e2",label:"Rangement · 20 h – 22 h",need:5,people:["u4"]},
+    {id:"s5",event:"e3",label:"Service et café · 14 h – 17 h",need:4,people:["u1"]},
+    {id:"s6",event:"e4",label:"Encadrement du défilé",need:8,people:[]},
+    {id:"s7",event:"e4",label:"Stand crêpes",need:3,people:["u3"]}
+  ];
+  const budget=[
+    {id:"b1",event:"e1",kind:"recette",label:"Billetterie repas (140 × 22 €)",planned:3000,actual:3080},
+    {id:"b2",event:"e1",kind:"depense",label:"Traiteur",planned:1900,actual:1960},
+    {id:"b3",event:"e1",kind:"depense",label:"Orchestre",planned:450,actual:450},
+    {id:"b4",event:"e1",kind:"recette",label:"Buvette",planned:600,actual:742},
+    {id:"b5",event:"e2",kind:"recette",label:"Emplacements exposants (25 × 15 €)",planned:375,actual:240},
+    {id:"b6",event:"e2",kind:"recette",label:"Buvette et vin chaud",planned:900,actual:0},
+    {id:"b7",event:"e2",kind:"depense",label:"Décorations et éclairage",planned:320,actual:286},
+    {id:"b8",event:"e2",kind:"depense",label:"Friandises pour les enfants",planned:180,actual:0},
+    {id:"b9",event:"e3",kind:"depense",label:"Galettes (boulangerie du village)",planned:260,actual:0},
+    {id:"b10",event:"e3",kind:"depense",label:"Animation accordéon",planned:200,actual:0},
+    {id:"b11",event:"",kind:"recette",label:"Subvention municipale 2026",planned:2500,actual:2500},
+    {id:"b12",event:"",kind:"depense",label:"Assurance RC annuelle",planned:310,actual:310}
+  ];
+  const requests=[
+    {id:"r1",type:"Matériel",subject:"10 barnums + 20 tables pour le Marché de Noël",event:"e2",by:"u4",date:"2026-10-28",status:"validee",by2:"u2",note:"Livraison par les services techniques le 12/12 à 14 h."},
+    {id:"r2",type:"Autorisation",subject:"Buvette temporaire (boissons du groupe 3) – Marché de Noël",event:"e2",by:"u3",date:"2026-11-06",status:"attente",by2:"",note:""},
+    {id:"r3",type:"Salle",subject:"Salle des fêtes le dimanche 17 janvier, 12 h – 19 h",event:"e3",by:"u1",date:"2026-11-08",status:"attente",by2:"",note:""},
+    {id:"r4",type:"Subvention",subject:"Subvention exceptionnelle de 400 € pour la scène de la Fête de la musique",event:"e5",by:"u1",date:"2026-11-02",status:"attente",by2:"",note:""},
+    {id:"r5",type:"Matériel",subject:"Sono de la mairie pour le Repas d'automne",event:"e1",by:"u4",date:"2026-09-20",status:"refusee",by2:"u6",note:"Sono déjà prêtée ce jour-là. Voir avec l'école de musique."}
+  ];
+  const docs=[
+    {id:"d1",title:"Statuts de l'association",cat:"Juridique",date:"2026-06-02",by:"u1"},
+    {id:"d2",title:"Convention de partenariat avec la commune",cat:"Juridique",date:"2026-07-11",by:"u6"},
+    {id:"d3",title:"Compte rendu – réunion du 4 novembre",cat:"Compte rendu",date:"2026-11-05",by:"u1"},
+    {id:"d4",title:"Attestation d'assurance RC 2026",cat:"Assurance",date:"2026-06-20",by:"u3"},
+    {id:"d5",title:"Bilan financier – Repas d'automne",cat:"Finances",date:"2026-10-25",by:"u3"}
+  ];
+  return {users,events,checks,slots,budget,requests,docs,seq:100};
+}
+
+let memory=null;
+function load(){try{const s=localStorage.getItem(KEY);return s?JSON.parse(s):null}catch(e){return null}}
+function save(){memory=db;try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}}
+let db=load()||seed();
+const S={user:null,view:"accueil",eventId:null};
+try{const u=sessionStorage.getItem(KEY+"-user");if(u&&db.users.some(x=>x.id===u))S.user=u}catch(e){}
+
+/* ---------- Droits ---------- */
+function me(){return db.users.find(u=>u.id===S.user)}
+function can(a){
+  const u=me(); if(!u) return false; const r=u.role;
+  switch(a){
+    case "internal": return r!=="visiteur";
+    case "editEvents": return r==="membre"||r==="admin";
+    case "viewBudget": return r!=="visiteur";
+    case "editBudget": return r==="admin"||!!u.treasurer;
+    case "validate": return r==="officiel"||r==="admin";
+    case "request": return r==="membre"||r==="admin";
+    case "signup": return r==="membre"||r==="admin";
+    case "addDoc": return r!=="visiteur";
+    case "users": return r==="admin";
+  }
+  return false;
+}
+
+/* ---------- Outils ---------- */
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const eur=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(n||0);
+const MONTHS=["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
+const parse=d=>{const [y,m,j]=d.split("-").map(Number);return new Date(y,m-1,j)};
+const fdate=d=>{if(!d)return"";const x=parse(d);return x.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})};
+const sdate=d=>{if(!d)return"";const x=parse(d);return x.getDate()+" "+MONTHS[x.getMonth()]+" "+x.getFullYear()};
+const today=()=>{const t=new Date();t.setHours(0,0,0,0);return t};
+const due=(ev,off)=>{const d=parse(ev.date);d.setDate(d.getDate()-off);return d};
+const uname=id=>(db.users.find(u=>u.id===id)||{name:"—"}).name;
+const initials=n=>n.split(/[\s-]+/).map(p=>p[0]).slice(0,2).join("").toUpperCase();
+const evt=id=>db.events.find(e=>e.id===id);
+const nid=p=>p+(++db.seq);
+function cal(d){const x=parse(d);return `<div class="cal" aria-hidden="true"><span>${MONTHS[x.getMonth()]}</span><b>${x.getDate()}</b></div>`}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2600)}
+const upcoming=()=>db.events.filter(e=>parse(e.date)>=today()).sort((a,b)=>a.date.localeCompare(b.date));
+
+/* ---------- Écrans ---------- */
+const VIEWS=[
+  ["accueil","Accueil",()=>true],
+  ["evenements","Événements",()=>true],
+  ["benevoles","Bénévoles",()=>can("internal")],
+  ["budget","Budget",()=>can("viewBudget")],
+  ["demandes","Demandes mairie",()=>can("internal")],
+  ["documents","Documents",()=>can("internal")],
+  ["comptes","Comptes",()=>can("users")]
+];
+
+function render(){
+  const app=document.getElementById("app");
+  if(!me()){app.innerHTML=loginView();return}
+  const allowed=VIEWS.find(v=>v[0]===S.view&&v[2]());
+  if(!allowed&&S.view!=="evenement") S.view="accueil";
+  const u=me();
+  app.innerHTML=`
+  ${demoBand()}
+  <header class="top"><div class="wrap">
+    <div class="brand">${logo()}<div><b>Comité des fêtes</b><small>Espace réservé · commune de Saint-Exemple</small></div></div>
+    <div class="who"><span class="avatar">${initials(u.name)}</span><div><div>${esc(u.name)}</div><span class="pill p-role">${ROLES[u.role]}${u.treasurer?" · trésorerie":""}</span></div>
+    <button class="btn sm" data-a="logout">Changer de compte</button></div>
+  </div>
+  <div class="wrap"><nav class="tabs" aria-label="Sections">${VIEWS.filter(v=>v[2]()).map(v=>`<button data-a="go" data-v="${v[0]}" ${S.view===v[0]||(S.view==="evenement"&&v[0]==="evenements")?'aria-current="page"':""}>${v[1]}</button>`).join("")}</nav></div>
+  </header>
+  <main class="wrap">${({accueil:homeView,evenements:eventsView,evenement:eventView,benevoles:volunteersView,budget:budgetView,demandes:requestsView,documents:docsView,comptes:usersView})[S.view]()}</main>`;
+}
+function demoBand(){return `<div class="demo-band"><div class="wrap"><span><b>Version de démonstration.</b> Données fictives, enregistrées seulement sur cet appareil.</span><button class="linkbtn" data-a="reset">Remettre les données d'exemple</button></div></div>`}
+function logo(){return `<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><path d="M2 8 Q17 16 32 8" fill="none" stroke="var(--muted)" stroke-width="1.5"/><path d="M7 10.6 l3 8 3-6.3z" fill="var(--accent)"/><path d="M15 12.4 l2 8.6 2.6-8.6z" fill="var(--lampion)"/><path d="M21.5 12 l3 7 2-8.7z" fill="var(--bad)"/></svg>`}
+
+function loginView(){
+  return `${demoBand()}<div class="wrap login"><div class="box">
+   <div class="row">${logo()}<h1>Comité des fêtes</h1></div>
+   <p class="muted">Espace réservé aux membres du comité et au conseil municipal. Dans la vraie version, chaque personne reçoit une invitation par e-mail et se connecte avec son mot de passe.<br><b>Pour la démo, choisis un compte pour voir ce que chaque rôle peut faire.</b></p>
+   <div style="display:flex;flex-direction:column;gap:8px">
+   ${db.users.map(u=>`<button class="card acct" data-a="login" data-id="${u.id}"><span class="avatar">${initials(u.name)}</span><span style="flex:1;min-width:0"><b>${esc(u.name)}</b><br><span class="small muted">${esc(u.title||"")}</span></span><span class="pill p-role">${ROLES[u.role]}</span></button>`).join("")}
+   </div>
+   <details class="small muted"><summary>Qui peut faire quoi ?</summary>
+   <ul>
+    <li><b>Visiteur</b> : consulte l'agenda des événements.</li>
+    <li><b>Membre du comité</b> : organise les événements, les checklists, les bénévoles ; demande salles, matériel et subventions. Le ou la trésorière tient le budget.</li>
+    <li><b>Élu·e du conseil</b> : voit tout, valide ou refuse les demandes faites à la mairie.</li>
+    <li><b>Administrateur</b> : tous les droits, gère les comptes et les rôles.</li>
+   </ul></details>
+  </div></div>`;
+}
+
+function homeView(){
+  const u=me(), up=upcoming();
+  let h=`<div><h1>Bonjour ${esc(u.name.split(" ")[0])}</h1><p class="muted">Nous sommes le ${today().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}.</p></div>`;
+  if(can("internal")){
+    const late=db.checks.filter(c=>!c.done&&evt(c.event).status!=="termine"&&due(evt(c.event),c.offset)<today());
+    const soon=db.checks.filter(c=>{if(c.done)return false;const e=evt(c.event);if(e.status==="termine")return false;const d=due(e,c.offset);const lim=today();lim.setDate(lim.getDate()+21);return d>=today()&&d<=lim});
+    const pending=db.requests.filter(r=>r.status==="attente");
+    const t=totals(db.budget);
+    h+=`<div class="stats">
+      <div class="stat"><div class="k">Prochain événement</div><div class="v">${up[0]?esc(up[0].title):"—"}</div><div class="small muted">${up[0]?sdate(up[0].date):""}</div></div>
+      <div class="stat"><div class="k">Tâches en retard</div><div class="v ${late.length?"neg":""}">${late.length}</div><div class="small muted">${soon.length} à faire sous 3 semaines</div></div>
+      <div class="stat"><div class="k">Demandes en attente</div><div class="v">${pending.length}</div><div class="small muted">${can("validate")?"à valider par vous":"côté mairie"}</div></div>
+      ${can("viewBudget")?`<div class="stat"><div class="k">Solde réel de l'année</div><div class="v ${t.ar-t.ad>=0?"pos":"neg"}">${eur(t.ar-t.ad)}</div><div class="small muted">prévu : ${eur(t.pr-t.pd)}</div></div>`:""}
+    </div>`;
+    if(can("validate")&&pending.length){
+      h+=`<section class="block"><div class="row spread"><h2>À valider</h2><button class="btn sm" data-a="go" data-v="demandes">Toutes les demandes</button></div><div class="list">${pending.map(requestRow).join("")}</div></section>`;
+    }
+    const todo=[...late,...soon].sort((a,b)=>due(evt(a.event),a.offset)-due(evt(b.event),b.offset)).slice(0,6);
+    h+=`<section class="block"><h2>À faire prochainement</h2><div class="list">${todo.length?todo.map(c=>checkRow(c,true)).join(""):`<div class="empty">Rien d'urgent. Bravo !</div>`}</div></section>`;
+  }
+  h+=`<section class="block"><div class="row spread"><h2>Agenda</h2><button class="btn sm" data-a="go" data-v="evenements">Tous les événements</button></div><div class="grid">${up.slice(0,3).map(eventCard).join("")}</div></section>`;
+  if(!can("internal")) h+=`<div class="lock">Avec un compte <b>visiteur</b>, seul l'agenda est visible. Les tâches, le budget et les demandes sont réservés au comité et aux élus.</div>`;
+  return h;
+}
+
+function eventCard(e){
+  const cs=db.checks.filter(c=>c.event===e.id), done=cs.filter(c=>c.done).length;
+  return `<button class="card" data-a="open" data-id="${e.id}">
+    <div class="date">${cal(e.date)}<div style="min-width:0"><h3>${esc(e.title)}</h3><div class="small muted">${esc(e.place)}</div></div></div>
+    <div class="row spread"><span class="pill p-${e.status}">${EV_STATUS[e.status]}</span>${can("internal")?`<span class="small muted">${done}/${cs.length} tâches faites</span>`:""}</div>
+  </button>`;
+}
+function eventsView(){
+  const sorted=[...db.events].sort((a,b)=>a.date.localeCompare(b.date));
+  const fut=sorted.filter(e=>e.status!=="termine"), past=sorted.filter(e=>e.status==="termine");
+  return `<div class="row spread"><h1>Événements</h1>${can("editEvents")?`<button class="btn primary" data-a="newEvent">Nouvel événement</button>`:""}</div>
+   <section class="block"><h2>À venir</h2><div class="grid">${fut.map(eventCard).join("")||`<div class="empty">Aucun événement prévu.</div>`}</div></section>
+   ${past.length?`<section class="block"><h2>Passés</h2><div class="grid">${past.map(eventCard).join("")}</div></section>`:""}`;
+}
+
+function checkRow(c,showEvent){
+  const e=evt(c.event), d=due(e,c.offset), late=!c.done&&d<today()&&e.status!=="termine";
+  return `<div class="li"><label class="check"><input type="checkbox" data-a="toggle" data-id="${c.id}" ${c.done?"checked":""} ${can("editEvents")?"":"disabled"}><span><span class="${c.done?"done-txt":""}">${esc(c.label)}</span>${showEvent?`<br><span class="small muted">${esc(e.title)}</span>`:""}</span></label>
+   <span class="small muted">avant le ${sdate(d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate())}</span>${late?`<span class="pill p-retard">En retard</span>`:c.done?`<span class="pill p-ok">Fait</span>`:""}</div>`;
+}
+function slotRow(s,showEvent){
+  const full=s.people.length>=s.need, mine=s.people.includes(S.user);
+  const chips=s.people.map(p=>`<span class="chip">${esc(uname(p))}</span>`).join("")+Array.from({length:Math.max(0,s.need-s.people.length)},()=>`<span class="chip free">place libre</span>`).join("");
+  let btn="";
+  if(can("signup")&&evt(s.event).status!=="termine") btn=mine?`<button class="btn sm" data-a="unsign" data-id="${s.id}">Me retirer</button>`:full?`<span class="pill p-ok">Complet</span>`:`<button class="btn sm primary" data-a="sign" data-id="${s.id}">Je m'inscris</button>`;
+  return `<div class="li"><div class="grow"><b>${esc(s.label)}</b>${showEvent?` <span class="small muted">· ${esc(evt(s.event).title)}</span>`:""}<div class="slots" style="margin-top:6px">${chips}</div></div><span class="small muted">${s.people.length}/${s.need}</span>${btn}</div>`;
+}
+
+function eventView(){
+  const e=evt(S.eventId); if(!e){S.view="evenements";return eventsView()}
+  let h=`<button class="btn sm back" data-a="go" data-v="evenements">← Événements</button>
+  <div class="date">${cal(e.date)}<div><h1>${esc(e.title)}</h1><div class="muted">${fdate(e.date)} · ${esc(e.place)}</div></div></div>
+  <div class="row"><span class="pill p-${e.status}">${EV_STATUS[e.status]}</span>${can("internal")?`<span class="small muted">Responsable : ${esc(uname(e.owner))}</span>`:""}
+  ${can("editEvents")?`<select id="ev-status" data-a="status" data-id="${e.id}" aria-label="Statut" class="btn sm">${Object.entries(EV_STATUS).map(([k,v])=>`<option value="${k}" ${k===e.status?"selected":""}>${v}</option>`).join("")}</select>`:""}</div>
+  <p>${esc(e.desc)}</p>`;
+  if(!can("internal")) return h+`<div class="lock">L'organisation détaillée est réservée au comité et aux élus.</div>`;
+  const cs=db.checks.filter(c=>c.event===e.id);
+  h+=`<section class="block"><h2>Checklist des démarches</h2><div class="list">${cs.map(c=>checkRow(c,false)).join("")}</div></section>`;
+  const ss=db.slots.filter(s=>s.event===e.id);
+  h+=`<section class="block"><div class="row spread"><h2>Bénévoles</h2>${can("editEvents")?`<button class="btn sm" data-a="newSlot" data-id="${e.id}">Ajouter un créneau</button>`:""}</div><div class="list">${ss.length?ss.map(s=>slotRow(s,false)).join(""):`<div class="empty">Aucun créneau pour l'instant.</div>`}</div></section>`;
+  if(can("viewBudget")){
+    const bl=db.budget.filter(b=>b.event===e.id);
+    h+=`<section class="block"><h2>Budget de l'événement</h2>${budgetTable(bl)}</section>`;
+  }
+  const rq=db.requests.filter(r=>r.event===e.id);
+  if(rq.length) h+=`<section class="block"><h2>Demandes à la mairie</h2><div class="list">${rq.map(requestRow).join("")}</div></section>`;
+  return h;
+}
+
+function volunteersView(){
+  const evs=upcoming();
+  return `<div><h1>Bénévoles</h1><p class="muted">Créneaux à pourvoir sur les prochains événements.</p></div>
+  ${evs.map(e=>{const ss=db.slots.filter(s=>s.event===e.id);if(!ss.length)return"";return `<section class="block"><h2>${esc(e.title)} <span class="small muted">· ${sdate(e.date)}</span></h2><div class="list">${ss.map(s=>slotRow(s,false)).join("")}</div></section>`}).join("")}`;
+}
+
+function totals(lines){
+  const t={pr:0,pd:0,ar:0,ad:0};
+  lines.forEach(b=>{if(b.kind==="recette"){t.pr+=b.planned;t.ar+=b.actual}else{t.pd+=b.planned;t.ad+=b.actual}});
+  return t;
+}
+function budgetTable(lines){
+  if(!lines.length) return `<div class="list"><div class="empty">Aucune ligne de budget.</div></div>`;
+  const t=totals(lines);
+  return `<div class="tablewrap"><table><thead><tr><th>Ligne</th><th>Type</th><th class="num">Prévu</th><th class="num">Réel</th>${can("editBudget")?"<th></th>":""}</tr></thead><tbody>
+   ${lines.map(b=>`<tr><td>${esc(b.label)}</td><td><span class="pill ${b.kind==="recette"?"p-ok":"p-retard"}">${b.kind==="recette"?"Recette":"Dépense"}</span></td><td class="num">${eur(b.planned)}</td><td class="num">${eur(b.actual)}</td>${can("editBudget")?`<td><button class="btn sm" data-a="editLine" data-id="${b.id}">Modifier</button></td>`:""}</tr>`).join("")}
+   <tr><td><b>Solde</b></td><td></td><td class="num"><b class="${t.pr-t.pd>=0?"pos":"neg"}">${eur(t.pr-t.pd)}</b></td><td class="num"><b class="${t.ar-t.ad>=0?"pos":"neg"}">${eur(t.ar-t.ad)}</b></td>${can("editBudget")?"<td></td>":""}</tr>
+  </tbody></table></div>`;
+}
+function budgetView(){
+  const t=totals(db.budget);
+  const groups=[...db.events].sort((a,b)=>a.date.localeCompare(b.date)).map(e=>({e,lines:db.budget.filter(b=>b.event===e.id)})).filter(g=>g.lines.length);
+  const gen=db.budget.filter(b=>!b.event);
+  return `<div class="row spread"><div><h1>Budget 2026–2027</h1><p class="muted">${can("editBudget")?"Vous pouvez saisir et corriger les lignes.":"Lecture seule. Seul le trésorier ou l'administrateur saisit les montants."}</p></div>${can("editBudget")?`<button class="btn primary" data-a="newLine">Ajouter une ligne</button>`:""}</div>
+  <div class="stats">
+   <div class="stat"><div class="k">Recettes réelles</div><div class="v pos">${eur(t.ar)}</div><div class="small muted">prévu ${eur(t.pr)}</div></div>
+   <div class="stat"><div class="k">Dépenses réelles</div><div class="v neg">${eur(t.ad)}</div><div class="small muted">prévu ${eur(t.pd)}</div></div>
+   <div class="stat"><div class="k">Solde réel</div><div class="v">${eur(t.ar-t.ad)}</div><div class="small muted">prévu ${eur(t.pr-t.pd)}</div></div>
+  </div>
+  <section class="block"><h2>Fonctionnement général</h2>${budgetTable(gen)}</section>
+  ${groups.map(g=>`<section class="block"><h2>${esc(g.e.title)} <span class="small muted">· ${sdate(g.e.date)}</span></h2>${budgetTable(g.lines)}</section>`).join("")}`;
+}
+
+function requestRow(r){
+  const e=evt(r.event);
+  let act="";
+  if(r.status==="attente"&&can("validate")) act=`<button class="btn sm ok" data-a="decide" data-ok="1" data-id="${r.id}">Valider</button><button class="btn sm bad" data-a="decide" data-ok="0" data-id="${r.id}">Refuser</button>`;
+  return `<div class="li"><div class="grow"><div class="row"><span class="pill p-projet">${esc(r.type)}</span><b>${esc(r.subject)}</b></div>
+   <div class="small muted">${e?esc(e.title)+" · ":""}demandé par ${esc(uname(r.by))} le ${sdate(r.date)}${r.by2?` · ${r.status==="validee"?"validée":"refusée"} par ${esc(uname(r.by2))}`:""}</div>
+   ${r.note?`<div class="small">« ${esc(r.note)} »</div>`:""}</div>
+   <span class="pill p-${r.status==="attente"?"attente":r.status==="validee"?"ok":"refuse"}">${RQ_STATUS[r.status]}</span>${act}</div>`;
+}
+function requestsView(){
+  const order={attente:0,validee:1,refusee:2};
+  const rs=[...db.requests].sort((a,b)=>order[a.status]-order[b.status]||b.date.localeCompare(a.date));
+  return `<div class="row spread"><div><h1>Demandes à la mairie</h1><p class="muted">Salles, matériel, subventions, autorisations. Le comité demande, les élus valident.</p></div>${can("request")?`<button class="btn primary" data-a="newRequest">Nouvelle demande</button>`:""}</div>
+  <div class="list">${rs.map(requestRow).join("")||`<div class="empty">Aucune demande.</div>`}</div>`;
+}
+
+function docsView(){
+  const ds=[...db.docs].sort((a,b)=>b.date.localeCompare(a.date));
+  return `<div class="row spread"><div><h1>Documents</h1><p class="muted">Statuts, conventions, comptes rendus, attestations.</p></div>${can("addDoc")?`<button class="btn primary" data-a="newDoc">Ajouter un document</button>`:""}</div>
+  <div class="list">${ds.map(d=>`<div class="li"><div class="grow"><b>${esc(d.title)}</b><div class="small muted">${esc(d.cat)} · ajouté par ${esc(uname(d.by))} le ${sdate(d.date)}</div></div><button class="btn sm" data-a="fakeOpen">Ouvrir</button></div>`).join("")}</div>`;
+}
+
+function usersView(){
+  return `<div class="row spread"><div><h1>Comptes</h1><p class="muted">Pas d'inscription libre : seul l'administrateur ajoute des personnes et choisit leur rôle.</p></div><button class="btn primary" data-a="newUser">Inviter une personne</button></div>
+  <div class="list">${db.users.map(u=>`<div class="li"><span class="avatar">${initials(u.name)}</span><div class="grow"><b>${esc(u.name)}</b><div class="small muted">${esc(u.title||"")} · ${esc(u.email||"")}</div></div>
+   <select id="role-${u.id}" class="btn sm" data-a="role" data-id="${u.id}" aria-label="Rôle de ${esc(u.name)}" ${u.id===S.user?"disabled":""}>${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${k===u.role?"selected":""}>${v}</option>`).join("")}</select>
+   ${u.role==="membre"?`<label class="small row" style="gap:4px"><input type="checkbox" data-a="treas" data-id="${u.id}" ${u.treasurer?"checked":""}> Trésorier</label>`:""}
+   ${u.id!==S.user?`<button class="btn sm bad" data-a="delUser" data-id="${u.id}">Retirer</button>`:""}</div>`).join("")}</div>`;
+}
+
+/* ---------- Fenêtres ---------- */
+let onSubmit=null;
+function modal(title,fields,submitLabel,cb){
+  onSubmit=cb;
+  document.getElementById("modal-root").innerHTML=`<div class="overlay" data-a="closeBg"><form class="modal" id="mform" role="dialog" aria-modal="true" aria-label="${esc(title)}"><h2>${esc(title)}</h2>${fields}<div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-a="close">Annuler</button><button type="submit" class="btn primary">${esc(submitLabel)}</button></div></form></div>`;
+  const f=document.querySelector("#mform input,#mform select,#mform textarea"); if(f) f.focus();
+}
+function closeModal(){document.getElementById("modal-root").innerHTML="";onSubmit=null}
+const fld=(id,label,inp)=>`<div class="field"><label for="${id}">${label}</label>${inp}</div>`;
+const evOptions=(sel,allowNone)=>(allowNone?`<option value="">Fonctionnement général</option>`:"")+[...db.events].filter(e=>e.status!=="termine"||e.id===sel).sort((a,b)=>a.date.localeCompare(b.date)).map(e=>`<option value="${e.id}" ${e.id===sel?"selected":""}>${esc(e.title)}</option>`).join("");
+
+const actions={
+  login:el=>{S.user=el.dataset.id;S.view="accueil";try{sessionStorage.setItem(KEY+"-user",S.user)}catch(e){}render();toast("Connecté·e : "+uname(S.user))},
+  logout:()=>{S.user=null;try{sessionStorage.removeItem(KEY+"-user")}catch(e){}render()},
+  reset:el=>{
+    if(el.dataset.confirm!=="1"){el.dataset.confirm="1";el.textContent="Confirmer : effacer mes modifications ?";setTimeout(()=>{if(el.isConnected){el.dataset.confirm="";el.textContent="Remettre les données d'exemple"}},4000);return}
+    db=seed();save();render();toast("Données d'exemple remises");
+  },
+  go:el=>{S.view=el.dataset.v;render();window.scrollTo(0,0)},
+  open:el=>{S.view="evenement";S.eventId=el.dataset.id;render();window.scrollTo(0,0)},
+  close:closeModal,
+  closeBg:(el,ev)=>{if(ev.target===el)closeModal()},
+  sign:el=>{const s=db.slots.find(x=>x.id===el.dataset.id);if(s.people.length<s.need&&!s.people.includes(S.user)){s.people.push(S.user);save();render();toast("Inscription enregistrée")}},
+  unsign:el=>{const s=db.slots.find(x=>x.id===el.dataset.id);s.people=s.people.filter(p=>p!==S.user);save();render();toast("Vous êtes retiré·e du créneau")},
+  decide:el=>{
+    const r=db.requests.find(x=>x.id===el.dataset.id), ok=el.dataset.ok==="1";
+    modal(ok?"Valider la demande":"Refuser la demande",`<p class="small">${esc(r.subject)}</p>`+fld("m-note",ok?"Précisions pour le comité (facultatif)":"Motif du refus",`<textarea id="m-note" rows="3" ${ok?"":"required"}></textarea>`),ok?"Valider":"Refuser",f=>{
+      r.status=ok?"validee":"refusee";r.by2=S.user;r.note=f["m-note"].value.trim();save();closeModal();render();toast(ok?"Demande validée":"Demande refusée");
+    });
+  },
+  newEvent:()=>modal("Nouvel événement",
+    fld("m-title","Nom","<input id='m-title' required>")+fld("m-date","Date","<input id='m-date' type='date' required>")+fld("m-place","Lieu","<input id='m-place' required>")+
+    fld("m-owner","Responsable",`<select id="m-owner">${db.users.filter(u=>u.role==="membre"||u.role==="admin").map(u=>`<option value="${u.id}" ${u.id===S.user?"selected":""}>${esc(u.name)}</option>`).join("")}</select>`)+
+    fld("m-desc","Description","<textarea id='m-desc' rows='3'></textarea>")+`<p class="small muted">La checklist des démarches (SACEM, buvette, assurance…) est créée automatiquement avec ses dates limites.</p>`,
+    "Créer",f=>{
+      const e={id:nid("e"),title:f["m-title"].value.trim(),date:f["m-date"].value,place:f["m-place"].value.trim(),owner:f["m-owner"].value,status:"projet",desc:f["m-desc"].value.trim()};
+      db.events.push(e);CHECK_TEMPLATE.forEach(t=>db.checks.push({id:nid("c"),event:e.id,label:t[0],offset:t[1],done:false}));
+      save();closeModal();S.view="evenement";S.eventId=e.id;render();toast("Événement créé");
+    }),
+  newSlot:el=>modal("Nouveau créneau bénévole",fld("m-label","Intitulé (tâche et horaire)","<input id='m-label' required placeholder='Buvette · 18 h – 21 h'>")+fld("m-need","Nombre de personnes","<input id='m-need' type='number' min='1' value='2' required>"),"Ajouter",f=>{
+      db.slots.push({id:nid("s"),event:el.dataset.id,label:f["m-label"].value.trim(),need:Math.max(1,+f["m-need"].value),people:[]});save();closeModal();render();toast("Créneau ajouté");
+    }),
+  newLine:()=>lineModal(null),
+  editLine:el=>lineModal(db.budget.find(b=>b.id===el.dataset.id)),
+  newRequest:()=>modal("Nouvelle demande à la mairie",
+    fld("m-type","Type",`<select id="m-type">${["Salle","Matériel","Subvention","Autorisation","Autre"].map(t=>`<option>${t}</option>`).join("")}</select>`)+
+    fld("m-ev","Événement concerné",`<select id="m-ev">${evOptions(S.eventId,true)}</select>`)+fld("m-subj","Objet de la demande","<textarea id='m-subj' rows='3' required></textarea>"),
+    "Envoyer aux élus",f=>{
+      db.requests.push({id:nid("r"),type:f["m-type"].value,subject:f["m-subj"].value.trim(),event:f["m-ev"].value,by:S.user,date:new Date().toISOString().slice(0,10),status:"attente",by2:"",note:""});save();closeModal();render();toast("Demande envoyée aux élus");
+    }),
+  newDoc:()=>modal("Ajouter un document",fld("m-dt","Titre","<input id='m-dt' required>")+fld("m-cat","Catégorie",`<select id="m-cat">${["Compte rendu","Juridique","Finances","Assurance","Communication"].map(c=>`<option>${c}</option>`).join("")}</select>`)+`<p class="small muted">Dans la vraie version, on joint ici le fichier (PDF, Word, photo).</p>`,"Ajouter",f=>{
+      db.docs.push({id:nid("d"),title:f["m-dt"].value.trim(),cat:f["m-cat"].value,date:new Date().toISOString().slice(0,10),by:S.user});save();closeModal();render();toast("Document ajouté");
+    }),
+  fakeOpen:()=>toast("Démo : les fichiers ne sont pas joints"),
+  newUser:()=>modal("Inviter une personne",fld("m-un","Nom et prénom","<input id='m-un' required>")+fld("m-ut","Fonction","<input id='m-ut' placeholder='Bénévole, conseiller municipal…'>")+fld("m-ue","E-mail","<input id='m-ue' type='email' required>")+fld("m-ur","Rôle",`<select id="m-ur">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${k==="membre"?"selected":""}>${v}</option>`).join("")}</select>`)+`<p class="small muted">Dans la vraie version, la personne reçoit un e-mail pour créer son mot de passe.</p>`,"Inviter",f=>{
+      db.users.push({id:nid("u"),name:f["m-un"].value.trim(),title:f["m-ut"].value.trim(),email:f["m-ue"].value.trim(),role:f["m-ur"].value});save();closeModal();render();toast("Invitation créée");
+    }),
+  delUser:el=>{
+    if(el.dataset.confirm!=="1"){el.dataset.confirm="1";el.textContent="Confirmer ?";return}
+    db.users=db.users.filter(u=>u.id!==el.dataset.id);save();render();toast("Compte retiré");
+  }
+};
+function lineModal(b){
+  modal(b?"Modifier la ligne":"Nouvelle ligne de budget",
+    fld("m-bl","Libellé",`<input id="m-bl" required value="${esc(b?b.label:"")}">`)+
+    fld("m-bk","Type",`<select id="m-bk"><option value="recette" ${b&&b.kind==="recette"?"selected":""}>Recette</option><option value="depense" ${!b||b.kind==="depense"?"selected":""}>Dépense</option></select>`)+
+    fld("m-be","Rattachée à",`<select id="m-be">${evOptions(b?b.event:"",true)}</select>`)+
+    fld("m-bp","Montant prévu (€)",`<input id="m-bp" type="number" min="0" step="1" required value="${b?b.planned:""}">`)+
+    fld("m-ba","Montant réel (€)",`<input id="m-ba" type="number" min="0" step="1" value="${b?b.actual:0}">`)+
+    (b?`<button type="button" class="btn bad" data-a="delLine" data-id="${b.id}">Supprimer cette ligne</button>`:""),
+    "Enregistrer",f=>{
+      const v={label:f["m-bl"].value.trim(),kind:f["m-bk"].value,event:f["m-be"].value,planned:+f["m-bp"].value||0,actual:+f["m-ba"].value||0};
+      if(b)Object.assign(b,v);else db.budget.push({id:nid("b"),...v});save();closeModal();render();toast("Budget enregistré");
+    });
+}
+actions.delLine=el=>{
+  if(el.dataset.confirm!=="1"){el.dataset.confirm="1";el.textContent="Cliquer encore pour supprimer";return}
+  db.budget=db.budget.filter(x=>x.id!==el.dataset.id);save();closeModal();render();toast("Ligne supprimée");
+};
+
+document.addEventListener("click",ev=>{
+  const el=ev.target.closest("[data-a]"); if(!el) return;
+  const a=el.dataset.a; if(el.tagName==="INPUT"||el.tagName==="SELECT") return;
+  if(actions[a]){ if(a!=="closeBg") ev.preventDefault(); actions[a](el,ev); }
+});
+document.addEventListener("change",ev=>{
+  const el=ev.target, a=el.dataset&&el.dataset.a; if(!a) return;
+  if(a==="toggle"){const c=db.checks.find(x=>x.id===el.dataset.id);c.done=el.checked;save();render();toast(c.done?"Tâche cochée":"Tâche décochée")}
+  if(a==="status"){evt(el.dataset.id).status=el.value;save();render();toast("Statut mis à jour")}
+  if(a==="role"){db.users.find(u=>u.id===el.dataset.id).role=el.value;save();render();toast("Rôle modifié")}
+  if(a==="treas"){db.users.find(u=>u.id===el.dataset.id).treasurer=el.checked;save();render()}
+});
+document.addEventListener("submit",ev=>{ev.preventDefault();if(onSubmit)onSubmit(ev.target.elements)});
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape")closeModal()});
+render();
+})();
+</script>
